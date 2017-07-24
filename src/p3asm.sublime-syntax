@@ -1,0 +1,144 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+name: P3 Assembly
+file_extensions:
+  - as
+  - p3as
+  - p3asm
+scope: source.p3asm
+
+variables:
+  ## Auxiliary variables
+  # Identifier
+  id: '(?i)[A-Z_][0-9A-Z_]*'
+  # Instruction
+  instruction: '{{arith}}|{{logical}}|{{shift}}|{{control}}|{{transfer}}|{{generic}}'
+  
+  # Arithmetic
+  arith: 'NEG|INC|DEC|ADDC?|SUBB?|CMP|MUL|DIV'
+  # Logical
+  logical: 'COM|AND|OR|XOR|TEST'
+  # Shifting related
+  shift: 'SH[RL]A?|RO[RL]C?'
+  # Flow control
+  control: '((BR|JMP|CALL)(\.N?[ONCZIP])?)|RETN?|RTI|INT'
+  # Transferring / moving data
+  transfer: 'MOV|MVB[HL]|XCH|PUSH|POP'
+  # Generic instructions
+  generic: 'NOP|ENI|DSI|SCT|CLC|CMC'
+
+
+contexts:
+  ## Auxiliary contexts / Rules
+  # Address
+  addr:
+    - include: numeric
+    - match: $
+      pop: true
+
+  # Comments
+  comments:
+    - match: ';'
+      scope: punctuation.definition.comment.p3asm
+      push: x-line-comment
+
+  # Constants
+  const:
+    - include: comments
+    - include: numeric
+    - include: string
+    - match: $
+      pop: true
+
+  # Expressions
+  expr:
+    - include: comments
+    - match: '\b(R[0-7]|PC|SP)\b'
+      scope: variable.language.register.p3asm
+    - match: '\bM\['
+      scope: entity.name.other.p3asm
+      push: x-index
+
+  # Numbers
+  numeric:
+    - match: '\b(-)?(0|1)+b\b'
+      scope: constant.numeric.binary.p3asm
+    - match: '\b(-)?[0-7]+o\b'
+      scope: constant.numeric.octal.p3asm
+    - match: '\b(-)?[0-9]+d?\b'
+      scope: constant.numeric.decimal.p3asm
+    - match: '\b(-)?(?i)[0-9A-F]+h\b'
+      scope: 'constant.numeric.hex.p3asm'
+
+  # Operands
+  ops:
+    - include: comments
+    - include: expr
+    - include: value
+
+  # String
+  string:
+    - match: \'
+      scope: punctuation.definition.string.begin.p3asm
+      push: x-string
+
+  # Variable values
+  value:
+    - include: const
+    - match: ','
+      scope: punctuation.separator.p3asm
+    - match: '\b\w+\b'
+      scope: constant.other.p3asm
+    - match: $
+      pop: true
+
+
+  ## States
+  x-line-comment:
+    - meta_scope: comment.line.p3asm
+    - match: $
+      pop: true
+
+  x-index:
+    - include: comments
+    - include: ops
+    - meta_content_scope: constant.other
+    - match: '\+'
+      scope: keyword.operator.arithmetic.p3asm
+    - match: '\]'
+      scope: entity.name.other.p3asm
+      pop: true
+
+  x-string:
+    - meta_scope: string.p3asm
+    - match: \'
+      scope: punctuation.definition.string.end.p3asm
+      pop: true
+
+
+  ## Main context
+  main:
+    - include: comments
+    # Constant definition
+    - match: '\b({{id}})\b\s+\b(?i)(EQU)\b\s+'
+      captures:
+        1: variable.other.constant.p3asm
+        2: keyword.directive.p3asm
+      push: const
+    # ORIG directives
+    - match: '\b(ORIG)\b\s+'
+      scope: keyword.directive.p3asm
+      push: addr
+    # Variable definition
+    - match: '\b({{id}})\b\s+\b(?i)(STR|TAB|WORD)\b\s+'
+      captures:
+        1: variable.other.readwrite.p3asm
+        2: keyword.directive.p3asm
+      push: value
+    # Code
+    - match: '(\b\w+:\s+)?\b(?i)({{instruction}})\b\s+'
+      captures:
+        1: variable.function.label.p3asm
+        2: keyword.instruction.p3asm
+      push: ops
