@@ -41,7 +41,10 @@ contexts:
   comments:
     - match: ';'
       scope: punctuation.definition.comment.p3asm
-      push: x-line-comment
+      push:
+        - meta_scope: comment.line.p3asm
+        - match: $
+          pop: true
 
   # Constants
   const:
@@ -58,7 +61,15 @@ contexts:
       scope: variable.language.register.p3asm
     - match: '\bM\['
       scope: entity.name.other.p3asm
-      push: x-index
+      push:
+        - include: expr
+        - include: value
+        - meta_content_scope: constant.other.p3asm
+        - match: '\+'
+          scope: keyword.operator.arithmetic.p3asm
+        - match: '\]'
+          scope: entity.name.other.p3asm
+          pop: true
 
   # Numbers
   numeric:
@@ -81,7 +92,11 @@ contexts:
   string:
     - match: \'
       scope: punctuation.definition.string.begin.p3asm
-      push: x-string
+      push:
+        - meta_scope: string.p3asm
+        - match: \'
+          scope: punctuation.definition.string.end.p3asm
+          pop: true
 
   # Variable values
   value:
@@ -91,29 +106,6 @@ contexts:
     - match: '\b\w+\b'
       scope: constant.other.p3asm
     - match: $
-      pop: true
-
-
-  ## States
-  x-line-comment:
-    - meta_scope: comment.line.p3asm
-    - match: $
-      pop: true
-
-  x-index:
-    - include: comments
-    - include: ops
-    - meta_content_scope: constant.other
-    - match: '\+'
-      scope: keyword.operator.arithmetic.p3asm
-    - match: '\]'
-      scope: entity.name.other.p3asm
-      pop: true
-
-  x-string:
-    - meta_scope: string.p3asm
-    - match: \'
-      scope: punctuation.definition.string.end.p3asm
       pop: true
 
 
