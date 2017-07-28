@@ -11,7 +11,7 @@ scope: source.p3asm
 variables:
   ## Auxiliary variables
   # Identifier
-  id: '(?i)[A-Z_][0-9A-Z_]*'
+  id: '[A-Za-z_][0-9A-Za-z_]*'
   # Instruction
   instruction: '{{arith}}|{{logical}}|{{shift}}|{{control}}|{{transfer}}|{{generic}}'
   
@@ -79,7 +79,7 @@ contexts:
       scope: constant.numeric.octal.p3asm
     - match: '\b(-)?[0-9]+d?\b'
       scope: constant.numeric.decimal.p3asm
-    - match: '\b(-)?(?i)[0-9A-F]+h\b'
+    - match: '\b(-)?[0-9A-Fa-f]+h\b'
       scope: 'constant.numeric.hex.p3asm'
 
   # Operands
